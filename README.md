@@ -76,8 +76,6 @@ codebase. In this checkout, the Piper integration has been updated for LeRobot
 - Piper SDK Python packages:
   - `piper_sdk`
   - `wego_piper`
-- Camera devices if recording image observations
-- A Hugging Face account/token if uploading datasets to the Hub
 
 Install this checkout in editable mode:
 
