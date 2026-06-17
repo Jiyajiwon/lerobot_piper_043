@@ -72,7 +72,6 @@ codebase. In this checkout, the Piper integration has been updated for LeRobot
 - Python 3.10 or newer
 - AgileX Piper arm hardware
 - CAN adapters for the leader/follower examples
-- Linux SocketCAN tools for the included `1_init_can.sh` helper
 - Piper SDK Python packages:
   - `piper_sdk`
   - `wego_piper`
