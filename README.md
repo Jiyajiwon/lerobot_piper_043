@@ -63,13 +63,12 @@ codebase. In this checkout, the Piper integration has been updated for LeRobot
 - `PiperLeader` follows the current `Teleoperator` interface and reads leader-arm
   control values as LeRobot actions.
 - `PiperMotorsBus` translates Piper SDK reads and writes into LeRobot motor bus
-  behavior, including normalized joint and gripper values.
-- The factory helpers recognize `--robot.type=piper_follower` and
+  behavior.
   `--teleop.type=piper_leader`.
 
 ## Requirements
 
-- Python 3.10 or newer
+- Python 3.10 
 - AgileX Piper arm hardware
 - CAN adapters for the leader/follower examples
 - Piper SDK Python packages:
@@ -189,31 +188,6 @@ Before recording, update the example scripts for your setup:
 - camera paths such as `/dev/video4`
 - episode length, FPS, and reset timing
 - `--policy.path=...` for HIL recording
-
-## Piper Device Behavior
-
-`PiperFollower` exposes seven motor features as both observations and actions:
-
-```text
-joint1.pos
-joint2.pos
-joint3.pos
-joint4.pos
-joint5.pos
-joint6.pos
-gripper.pos
-```
-
-When cameras are configured, their frames are added to the observation dictionary
-under the configured camera names.
-
-`PiperMotorsBus` normalizes Piper SDK joint values into LeRobot ranges:
-
-- Arm joints can use `RANGE_M100_100` or degrees, depending on
-  `--robot.use_degrees`.
-- The gripper uses `RANGE_0_100`.
-- Built-in calibration ranges are currently defined in the Piper follower and
-  leader implementations.
 
 ## Safety Notes
 
