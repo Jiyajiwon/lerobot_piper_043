@@ -1,87 +1,85 @@
 # LeRobot Piper for LeRobot 0.4.3
 
-This repository is a LeRobot 0.4.3 refactor of the Piper robot integration.
+This repository adds AgileX Piper support to LeRobot 0.4.3.
 
-The Piper-specific implementation was written with reference to
+It is based on the Piper integration work from
 [WeGo-Robotics/lerobot_piper](https://github.com/WeGo-Robotics/lerobot_piper.git),
-which provided Piper support for LeRobot 0.3.3. This project adapts that work to
-the LeRobot 0.4.3 codebase and CLI structure while preserving the normal LeRobot
-workflow for teleoperation, dataset recording, policy training, and evaluation.
+which targeted LeRobot 0.3.3. The Piper pieces have been refactored here to fit
+the LeRobot 0.4.3 robot/teleoperator config structure, factory utilities, and
+CLI workflow.
 
-This is intended for AgileX Piper leader-follower setups using Linux SocketCAN
-interfaces.
+The main workflow is simple: connect Piper arms over CAN bus, use one arm as the
+leader, use the other as the follower, and record LeRobot datasets from the
+follower state, actions, and cameras.
 
-## What This Repository Adds
+## What Is Included
 
-- A Piper motor bus implementation at `src/lerobot/motors/piper/`
-- A LeRobot `Robot` implementation for the follower arm:
-  `--robot.type=piper_follower`
-- A LeRobot `Teleoperator` implementation for the leader arm:
-  `--teleop.type=piper_leader`
-- Piper registration in the LeRobot robot and teleoperator factory utilities
-- SocketCAN setup helpers for leader/follower CAN interfaces
-- Example scripts for teleoperation, dual-port recording, single-port recording,
-  and HIL joint-delta recording
+- `PiperMotorsBus`, a Piper SDK-backed motor bus implementation
+- `piper_follower`, a LeRobot `Robot` type for the follower arm
+- `piper_leader`, a LeRobot `Teleoperator` type for the leader arm
+- Factory registration so the Piper devices can be created from CLI arguments
+- CAN setup scripts for stable leader/follower interface names
+- Example scripts for teleoperation, dataset recording, and HIL recording
 
-The rest of the repository follows the upstream Hugging Face LeRobot 0.4.3
-layout and command-line tools.
+Most of the repository remains the upstream Hugging Face LeRobot 0.4.3 codebase.
+The Piper-specific additions live in a small number of files listed below.
 
-## Main Components
+## Key Files
 
 ```text
 src/lerobot/motors/piper/
-  piper.py                         PiperMotorsBus wrapper around the Piper SDK
-  tables.py                        Piper motor model and initialization tables
+  piper.py                          PiperMotorsBus wrapper around the Piper SDK
+  tables.py                         Piper motor model and initialization values
 
 src/lerobot/robots/piper_follower/
-  config_piper_follower.py         LeRobot robot config registration
-  piper_follower.py                Follower arm, cameras, observations, actions
+  config_piper_follower.py          LeRobot robot config registration
+  piper_follower.py                 Follower arm, cameras, observations, actions
 
 src/lerobot/teleoperators/piper_leader/
-  config_piper_leader.py           LeRobot teleoperator config registration
-  piper_leader.py                  Leader arm action source
+  config_piper_leader.py            LeRobot teleoperator config registration
+  piper_leader.py                   Leader arm action source
 
 src/lerobot/scripts/
-  lerobot_record_singleport.py     Direct/single-port recording flow
+  lerobot_record_singleport.py      Single-port/direct recording flow
   lerobot_record_HIL_joint_delta.py HIL recording flow with a policy in the loop
 
-1_init_can.sh                      CAN interface setup and renaming helper
-2_teleop.sh                        Leader-follower teleoperation example
-3_doubleport_record.sh             Dual-CAN dataset recording example
-4_singleport_record.sh             Single-CAN/direct recording example
-5_HIL_record.sh                    HIL joint-delta recording example
+1_init_can.sh                       CAN interface setup and renaming helper
+2_teleop.sh                         Leader-follower teleoperation example
+3_doubleport_record.sh              Dual-port dataset recording example
+4_singleport_record.sh              Single-port/direct recording example
+5_HIL_record.sh                     HIL joint-delta recording example
 ```
 
 ## Refactor Notes
 
-Compared with the LeRobot 0.3.3-oriented Piper code referenced above, this
-repository updates the integration for LeRobot 0.4.3 patterns:
+The original reference implementation was written for a LeRobot 0.3.3-style
+codebase. In this checkout, the Piper integration has been updated for LeRobot
+0.4.3:
 
-- `PiperFollowerConfig` is registered with `RobotConfig.register_subclass`.
-- `PiperLeaderConfig` is registered with `TeleoperatorConfig.register_subclass`.
-- `PiperFollower` follows the 0.4.3 `Robot` interface for observations, actions,
-  camera configs, and safe action limiting.
-- `PiperLeader` follows the 0.4.3 `Teleoperator` interface for action features
-  and leader-arm reads.
-- `PiperMotorsBus` adapts Piper SDK reads/writes into LeRobot motor bus semantics,
-  including normalized joint and gripper positions.
-- The factory helpers can instantiate Piper devices from CLI options such as
-  `--robot.type=piper_follower` and `--teleop.type=piper_leader`.
+- `PiperFollowerConfig` registers through `RobotConfig.register_subclass`.
+- `PiperLeaderConfig` registers through `TeleoperatorConfig.register_subclass`.
+- `PiperFollower` follows the current `Robot` interface for observations,
+  actions, camera configs, and optional action limiting.
+- `PiperLeader` follows the current `Teleoperator` interface and reads leader-arm
+  control values as LeRobot actions.
+- `PiperMotorsBus` translates Piper SDK reads and writes into LeRobot motor bus
+  behavior, including normalized joint and gripper values.
+- The factory helpers recognize `--robot.type=piper_follower` and
+  `--teleop.type=piper_leader`.
 
 ## Requirements
 
-- Ubuntu/Linux environment with SocketCAN support
 - Python 3.10 or newer
-- Two CAN adapters for the default leader-follower examples
 - AgileX Piper arm hardware
-- Piper SDK Python packages available in the environment, including the modules
-  imported by the driver:
+- CAN adapters for the leader/follower examples
+- Linux SocketCAN tools for the included `1_init_can.sh` helper
+- Piper SDK Python packages:
   - `piper_sdk`
   - `wego_piper`
-- Camera devices if recording vision datasets
+- Camera devices if recording image observations
 - A Hugging Face account/token if uploading datasets to the Hub
 
-Install the LeRobot package from this repository in editable mode:
+Install this checkout in editable mode:
 
 ```bash
 pip install -e .
@@ -93,31 +91,30 @@ For the full dependency set used by this checkout:
 pip install -r requirements-ubuntu.txt
 ```
 
-Install the Piper SDK dependencies according to your Piper SDK distribution if
-they are not already available in your Python environment.
+If `piper_sdk` or `wego_piper` is missing, install the Piper SDK dependencies
+from your Piper SDK distribution.
 
 ## CAN Setup
 
-The helper script `1_init_can.sh` maps physical USB bus locations to stable CAN
-interface names:
+`1_init_can.sh` is a Linux SocketCAN helper. It maps physical USB bus locations
+to stable CAN names so the rest of the scripts can refer to predictable ports:
 
 ```bash
 bash 1_init_can.sh
 ```
 
-By default, the script expects:
+The default names are:
 
 ```bash
 can_leader:1000000
 can_follower:1000000
 ```
 
-Before running on a different machine, edit the `USB_PORTS` table in
-`1_init_can.sh` so that each physical USB port maps to the correct interface
-name and bitrate. The script loads `gs_usb`, configures bitrate, brings CAN
-interfaces up, and renames them to the configured names.
+Before running it on a new machine, edit the `USB_PORTS` table in
+`1_init_can.sh`. Each physical USB port should map to the interface name and
+bitrate you want to use.
 
-You can inspect the detected CAN interfaces with:
+You can inspect detected CAN interfaces with:
 
 ```bash
 ip -br link show type can
@@ -125,13 +122,13 @@ ip -br link show type can
 
 ## Teleoperation
 
-After the CAN interfaces are configured, run the provided teleoperation example:
+After the CAN interfaces are ready, start leader-follower teleoperation:
 
 ```bash
 bash 2_teleop.sh
 ```
 
-The expanded command uses:
+The core command is:
 
 ```bash
 lerobot-teleoperate \
@@ -149,25 +146,46 @@ resolution, and FPS values for your camera setup.
 
 ## Recording Datasets
 
-Dual-port leader-follower recording:
+This repository includes three recording entry points. They share the same basic
+LeRobot dataset flow, but they are meant for different hardware/control setups.
+
+### Dual-port leader-follower recording
 
 ```bash
 bash 3_doubleport_record.sh
 ```
 
-Single-port/direct recording:
+Use this for the standard two-arm setup. The leader arm is connected through
+`can_leader`, the follower arm through `can_follower`, and LeRobot records the
+follower observations, commanded actions, and camera frames as a dataset. This is
+the usual choice when collecting demonstrations by physically moving the leader
+arm.
+
+### Single-port/direct recording
 
 ```bash
 bash 4_singleport_record.sh
 ```
 
-HIL joint-delta recording with a policy checkpoint:
+Use this when you want to record through a single follower-side CAN interface
+without adding a separate `piper_leader` teleoperator to the command. The script
+uses the custom `lerobot_record_singleport.py` path with `--direct_record=true`,
+which is useful for simpler one-arm recording or quick checks where the full
+leader-follower setup is not needed.
+
+### HIL joint-delta recording with a policy checkpoint
 
 ```bash
 bash 5_HIL_record.sh
 ```
 
-Before recording, update the example scripts for your environment:
+Use this for human-in-the-loop recording with a trained policy loaded from
+`--policy.path`. The follower, leader, cameras, and policy are all part of the
+session: the policy can propose actions while the human operator can guide or
+correct behavior through the leader arm. The resulting episodes can be used to
+inspect, improve, or extend policy behavior on the real Piper setup.
+
+Before recording, update the example scripts for your setup:
 
 - `--dataset.repo_id=your_HF_id/your_repo_id`
 - `--dataset.single_task="..."`
@@ -177,7 +195,7 @@ Before recording, update the example scripts for your environment:
 
 ## Piper Device Behavior
 
-`PiperFollower` exposes seven action/observation motor features:
+`PiperFollower` exposes seven motor features as both observations and actions:
 
 ```text
 joint1.pos
@@ -189,8 +207,8 @@ joint6.pos
 gripper.pos
 ```
 
-When cameras are configured, camera frames are added to the observation
-dictionary using the configured camera names.
+When cameras are configured, their frames are added to the observation dictionary
+under the configured camera names.
 
 `PiperMotorsBus` normalizes Piper SDK joint values into LeRobot ranges:
 
@@ -202,26 +220,21 @@ dictionary using the configured camera names.
 
 ## Safety Notes
 
-- Verify CAN interface names before enabling the robot.
-- Keep the robot workspace clear before running teleoperation or recording.
-- Confirm camera indices and dataset destinations before starting long sessions.
-- Use `--robot.max_relative_target` when you want LeRobot to clamp action jumps
+- Check CAN interface names before enabling the robot.
+- Keep the robot workspace clear before teleoperation or recording.
+- Confirm camera indices and dataset destinations before long sessions.
+- Use `--robot.max_relative_target` if you want LeRobot to clamp action jumps
   between the requested target and current follower position.
 - The current Piper calibration load/save hooks are placeholders; fixed
   calibration ranges are defined in code.
 
-## Relationship to Upstream Projects
+## Related Projects
 
-This repository keeps the LeRobot package structure and version target from
-Hugging Face LeRobot 0.4.3, while adding and adapting Piper support.
-
-Piper-specific code and behavior were developed with reference to:
-
-- [WeGo-Robotics/lerobot_piper](https://github.com/WeGo-Robotics/lerobot_piper.git)
-
-General LeRobot functionality, dataset tooling, policies, and CLI conventions
-come from:
-
-- [huggingface/lerobot](https://github.com/huggingface/lerobot)
+- [WeGo-Robotics/lerobot_piper](https://github.com/WeGo-Robotics/lerobot_piper.git):
+  Piper support for LeRobot 0.3.3, used as the main reference for this refactor.
+- [agilexrobotics/piper_sdk](https://github.com/agilexrobotics/piper_sdk): the
+  official Piper robot arm SDK used by the Piper motor bus layer.
+- [huggingface/lerobot](https://github.com/huggingface/lerobot): the upstream
+  LeRobot project that provides the dataset, training, policy, and CLI tooling.
 
 See `LICENSE` and source file headers for licensing and attribution details.
