@@ -169,7 +169,7 @@ uses the custom `lerobot_record_singleport.py` path with `--direct_record=true`,
 which is useful for simpler one-arm recording or quick checks where the full
 leader-follower setup is not needed.
 
-### HIL joint-delta recording with a policy checkpoint
+### HIL joint-delta recording
 
 ```bash
 bash 5_HIL_record.sh
