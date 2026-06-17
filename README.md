@@ -141,8 +141,11 @@ arm.
 ```bash
 bash 4_singleport_record.sh
 ```
+<p align="center">
+  <img src="./media/readme/piper_sdk_singleport.PNG" width="700" alt="AgileX Piper leader-follower setup">
+</p>
 
-Use this when the leader and follower arms are directly connected over CAN, with the PC attached through a single USB-CAN interface such as `can0`. The leader arm already commands the follower arm at the hardware level, so both arms move together. It records the follower observations and stores the follower's current joint/gripper state as the dataset action.
+Use this when the leader and follower arms are directly connected over CAN, with the PC attached through a single USB-CAN interface. The leader arm already commands the follower arm at the hardware level, so both arms move together. It records the follower observations and stores the follower's current joint/gripper state as the dataset action.
 
 ### HIL joint-delta recording
 
