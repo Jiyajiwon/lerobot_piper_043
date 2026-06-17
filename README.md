@@ -8,10 +8,6 @@ which targeted LeRobot 0.3.3. The Piper pieces have been refactored here to fit
 the LeRobot 0.4.3 robot/teleoperator config structure, factory utilities, and
 CLI workflow.
 
-The main workflow is simple: connect Piper arms over CAN bus, use one arm as the
-leader, use the other as the follower, and record LeRobot datasets from the
-follower state, actions, and cameras.
-
 ## What Is Included
 
 - `PiperMotorsBus`, a Piper SDK-backed motor bus implementation
@@ -22,7 +18,6 @@ follower state, actions, and cameras.
 - Example scripts for teleoperation, dataset recording, and HIL recording
 
 Most of the repository remains the upstream Hugging Face LeRobot 0.4.3 codebase.
-The Piper-specific additions live in a small number of files listed below.
 
 ## Key Files
 
@@ -49,22 +44,6 @@ src/lerobot/scripts/
 4_singleport_record.sh              Single-port/direct recording example
 5_HIL_record.sh                     HIL joint-delta recording example
 ```
-
-## Refactor Notes
-
-The original reference implementation was written for a LeRobot 0.3.3-style
-codebase. In this checkout, the Piper integration has been updated for LeRobot
-0.4.3:
-
-- `PiperFollowerConfig` registers through `RobotConfig.register_subclass`.
-- `PiperLeaderConfig` registers through `TeleoperatorConfig.register_subclass`.
-- `PiperFollower` follows the current `Robot` interface for observations,
-  actions, camera configs, and optional action limiting.
-- `PiperLeader` follows the current `Teleoperator` interface and reads leader-arm
-  control values as LeRobot actions.
-- `PiperMotorsBus` translates Piper SDK reads and writes into LeRobot motor bus
-  behavior.
-  `--teleop.type=piper_leader`.
 
 ## Requirements
 
@@ -163,11 +142,7 @@ arm.
 bash 4_singleport_record.sh
 ```
 
-Use this when you want to record through a single follower-side CAN interface
-without adding a separate `piper_leader` teleoperator to the command. The script
-uses the custom `lerobot_record_singleport.py` path with `--direct_record=true`,
-which is useful for simpler one-arm recording or quick checks where the full
-leader-follower setup is not needed.
+Use this when the leader and follower arms are directly connected over CAN, with the PC attached through a single USB-CAN interface such as `can0`. The leader arm already commands the follower arm at the hardware level, so both arms move together. It records the follower observations and stores the follower's current joint/gripper state as the dataset action.
 
 ### HIL joint-delta recording
 
@@ -175,29 +150,16 @@ leader-follower setup is not needed.
 bash 5_HIL_record.sh
 ```
 
-Use this for human-in-the-loop recording with a trained policy loaded from
-`--policy.path`. The follower, leader, cameras, and policy are all part of the
-session: the policy can propose actions while the human operator can guide or
-correct behavior through the leader arm. The resulting episodes can be used to
-inspect, improve, or extend policy behavior on the real Piper setup.
+Use this when a trained policy controls the follower arm by default, but a human operator can temporarily intervene through the leader arm when the policy needs correction. During intervention, the script records the leader arm's movement as a joint delta from the moment intervention starts, applies that delta to the follower, and saves the corrected action.
 
-Before recording, update the example scripts for your setup:
-
-- `--dataset.repo_id=your_HF_id/your_repo_id`
-- `--dataset.single_task="..."`
-- camera paths such as `/dev/video4`
-- episode length, FPS, and reset timing
-- `--policy.path=...` for HIL recording
+After the correction, intervention mode can be disabled and the policy resumes from the updated robot state. This is useful for collecting policy rollouts with human corrections instead of fully manual demonstrations.
 
 ## Safety Notes
 
 - Check CAN interface names before enabling the robot.
 - Keep the robot workspace clear before teleoperation or recording.
 - Confirm camera indices and dataset destinations before long sessions.
-- Use `--robot.max_relative_target` if you want LeRobot to clamp action jumps
   between the requested target and current follower position.
-- The current Piper calibration load/save hooks are placeholders; fixed
-  calibration ranges are defined in code.
 
 ## Related Projects
 
@@ -207,5 +169,3 @@ Before recording, update the example scripts for your setup:
   official Piper robot arm SDK used by the Piper motor bus layer.
 - [huggingface/lerobot](https://github.com/huggingface/lerobot): the upstream
   LeRobot project that provides the dataset, training, policy, and CLI tooling.
-
-See `LICENSE` and source file headers for licensing and attribution details.
